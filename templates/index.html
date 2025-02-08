@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css?family=Zen+Dots&display=swap" rel="stylesheet" />
+    <title>SacreSync</title>
+    <style>
+        @keyframes slideInTop {
+            0% {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInBottom {
+            0% {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Center the body content vertically and horizontally */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #e5e7eb;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden; /* Prevent scrolling */
+        }
+
+        .container {
+            width: 100%;
+            max-width: 375px; /* Standard mobile width */
+            height: 100%;
+            max-height: 2067px; /* Standard mobile height */
+            background-color: rgb(255, 255, 255);
+            background-size: cover;
+            background-image: url("{{ url_for('static', filename='bg.png') }}");
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 0px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-shadow: 0px 3px 4px rgba(0, 0, 0, 0.25);
+            padding: 20px;
+            transition: opacity 0.5s ease-in-out;
+            overflow: hidden;
+        }
+
+        .start-button {
+            background-color: #f01606;
+            color: white;
+            border: none;
+            padding: 10px 40px;
+            border-radius: 100px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 30px;
+            animation: slideInBottom 2s ease-in;
+            animation-delay: 1s;
+            position:relative;
+            top:-10px;
+        }
+
+        .start-button:hover {
+            background-color: #9c0808;
+        }
+
+        .image {
+            width: 210px;
+            top: -70px;
+            position: relative;
+            animation: slideInTop 2s ease;
+            animation-delay: 0s;
+        }
+
+        .text {
+            margin-bottom: 10px;
+            width: 100%;
+            color: rgba(255, 0, 0, 1);
+            text-shadow: 0px 3px 4px rgba(0, 0, 0, 0.25);
+            font-family: Zen Dots;
+            font-weight: Regular;
+            font-size: 36px;
+            opacity: 1;
+            text-align: center;
+            animation: slideInBottom 2s ease-in-out;
+            animation-delay: 0.5s;
+            top: -100px;
+            position: relative;
+        }
+
+        /* Make the design responsive for small mobile screens */
+        @media (max-width: 480px) {
+            .container {
+                width: 100%;
+                max-width: 320px;
+            }
+
+            .image {
+                position:relative;
+                top: -15%;
+                width: 180px;
+            }
+
+            .text {
+                position:relative;
+                top:-15%;
+                font-size: 32px;
+            }
+
+            .start-button {
+                position: relative;
+                top: 15%;
+                font-size: 16px;
+                padding: 15px 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img class="image" src="{{ url_for('static', filename='image.png') }}" alt="Local Image" width="100px">
+        <p class="text">SACRE SYNC</p>
+        <button class="start-button" id="startButton">Start Navigating</button>
+    </div>
+
+    <script>
+        // JavaScript function to handle the button click
+        document.getElementById('startButton').addEventListener('click', function() {
+            // Navigate to the /newpage route defined in Flask
+            window.location.href = '{{ url_for("new_screen") }}';  // Using Flask's url_for function to generate the URL
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium Dijkstra Map</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #controls { position: absolute; top: 10px; left: 10px; background: white; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer" style="width: 100vw; height: 100vh;"></div>
+    <div id="controls">
+        <label for="end">End: </label>
+        <select id="end">
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+            <option value="H">H</option>
+            <option value="I">I</option>
+            <option value="J">J</option>
+            <option value="K">FACULTY SHS</option> //FACULTY SHS
+            <option value="L">L</option>
+            <option value="M">M</option>
+            <option value="N">N</option>
+            <option value="O">RAYMOND CAMPUS</option> //RAYMOND START
+            <option value="P">P</option>
+            <option value="Q">Q</option>
+            <option value="R">R</option>
+            <option value="S">CASHIER</option> // CASHIER
+            <option value="T">T</option> 
+            <option value="U">U</option>
+            <option value="V">V</option>
+            <option value="W">W</option>
+            <option value="X">X</option>
+            <option value="Y">Y</option>
+            <option value="Z">Z</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">CHAPEL</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">XAVIER</option>
+            <option value="13">13</option>
+            <option value="14">14</option>
+            <option value="15">15</option>
+            <option value="16">16</option>
+            <option value="17">17</option>
+            <option value="18">18</option>
+            <option value="19">LIBRARY</option>
+            <option value="20">20</option>
+            <option value="21">21</option>
+            <option value="22">22</option>
+            <option value="23">23</option>
+            <option value="24">24</option>
+            <option value="25">25</option>
+            <option value="26">ELEM CLASSROOMS</option>
+            <option value="27">27</option>
+            <option value="28">ELEM OFFICES</option>
+            <option value="29">29</option>
+            <option value="30">30</option>
+            <option value="31">31</option>
+            <option value="32">32</option>
+            <option value="33">33</option>
+            <option value="34">34</option>
+            <option value="35">35</option>
+            <option value="36">36</option>
+            <option value="37">NORBERT</option>
+            <option value="38">38</option>
+            <option value="39">39</option>
+            <option value="40">40</option>
+            <option value="41">41</option>
+            <option value="42">42</option>
+            <option value="43">43</option>
+            <option value="44">44</option>
+            <option value="45">45</option>
+            <option value="46">46</option>
+            <option value="47">47</option>
+            <option value="48">48</option>
+            <option value="49">49</option>
+            <option value="50">GYM ENTRANCE</option>
+            <option value="51">51</option>
+            <option value="52">52</option>
+
+            <option value="53">GYM EXIT</option>
+            <option value="54">54</option>
+            <option value="55">55</option>
+            <option value="56">56</option>
+            <option value="57">57</option>
+            <option value="58">58</option>
+            <option value="59">SACRE COUR HOTEL</option>
+            <option value="60">60</option>
+            <option value="61">61</option>
+            <option value="62">62</option>
+            <option value="63">63</option>
+            <option value="64">64</option>
+            <option value="65">65</option>
+        
+        </select>
+        <button onclick="updateRoute()">Find Route</button>
+    </div>
+    <script>
+        // Initialize Cesium Viewer with 2D and OSM imagery provider
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhOTVjOTZhYy1hZTg4LTQxMjctOGIwNS02NTJhNTY0OGM2NGIiLCJpZCI6Mjc0MTQ4LCJpYXQiOjE3Mzg5MzMzMjV9.jplqE-F0SAT9i29a2vzFr34liBCyUMR14Yg36hey_Wk';
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            terrainProvider: Cesium.createWorldTerrain(),
+            imageryProvider: new Cesium.UrlTemplateImageryProvider({
+                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+            }),
+            scene3DOnly: false, // Ensures that it's in 2D mode
+            selectedImageryProviderViewModel: null // Disable default imagery provider view model
+        });
+
+        viewer.scene.morphTo2D(0); // Switch to 2D view
+
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(125.35287188231865, 6.751600681085947, 500),
+            orientation: {
+                heading: Cesium.Math.toRadians(0),
+                pitch: Cesium.Math.toRadians(-90),
+                roll: 0.0
+            }
+        });
+
+        // Initialize userLocation with the specified coordinates
+        let userLocation = null;
+        let userMarker = null;
+
+    
+        const graph = {
+    'A': { 'B': 2 }, 
+    'B': { 'A': 2, 'C': 3, 'E': 5 }, 
+    'C': { 'B': 3, 'D': 3, 'G': 2, 'W': 10 }, 
+    'D': { 'C': 5, 'F': 3 }, 
+    'E': { 'B': 5, 'C': 10, 'F': 50 },
+    'F': { 'C': 10, 'D': 2, 'G': 7, 'J': 5, 'O': 5 }, 
+    'G': { 'F': 7, 'C': 2, 'H': 5 }, 
+    'H': { 'G': 5, 'C': 10, 'I': 3, 'N': 2 },
+    'I': { 'H': 3, 'C': 10, 'J': 7, 'K': 5, 'N': 15 },
+    'J': { 'F': 5, 'I': 7, 'K': 15, 'Y': 5 }, 
+    'K': { 'J': 15, 'I': 5, 'L': 7, 'M': 7 },
+    'L': { 'K': 7, 'I': 5, 'M': 7 },
+    'M': { 'K': 7, 'I': 5, 'N': 10, '10': 5 ,'3': 5},
+    'N': { 'M': 10, 'H': 2, 'X': 5 }, 
+    'O': { 'F': 5, 'P': 5, 'T': 5 }, 
+    'P': { 'Q': 5, 'O': 5 }, 
+    'Q': { 'P': 5, 'R': 5, 'T': 5 },
+    'R': { 'Q': 5, 'S': 5 },
+    'S': { 'R': 5, 'T': 5 },
+    'T': { 'O': 5, 'Q': 5, 'V': 5 },
+    'U': { 'R': 5, 'V': 5 },
+    'V': { 'U': 5, 'T': 5 },
+    'W': { 'C': 10, '11': 5 },
+    'X': { '11': 5, 'N': 5, '3': 5 },
+    'Y': { 'Z': 5, 'M': 5, 'J': 5, '10': 5 },
+    'Z': { 'Y': 5, '1': 5 },
+    '1': { 'Z': 5, '2': 5, '9': 5 }, 
+    '2': { '1': 5, '16': 5 }, 
+    '3': { '8': 5, '4': 5, 'X': 5 }, 
+    '4': { '3': 5, '5': 5 },
+    '5': { '6': 5, '4': 5, '7': 5 },
+    '6': { '5': 5 },
+    '7': { '5': 5, '13': 5, '12': 5 }, 
+    '8': { '3': 5, '9': 5 },
+    '9': { '8': 5, '10': 5, '1': 5 }, 
+    '10': { '9': 5, 'Y': 5, 'M': 5 },
+    '11': { 'W': 5, 'X': 5 },
+    '12': { '2': 5 , '7': 5}, 
+    '13': { '7': 5, '14': 5 },
+    '14': { '13': 5, '15': 5 },
+    '15': { '14': 5, '16': 5 },
+    '16': { '15': 5, '2': 5, '17': 5 },
+    '17': { '16': 5, '18': 5 },
+    '18': { '17': 5, '19': 5, '21': 5 },
+    '19': { '20': 5, '18': 5 },
+    '20': { '19': 5, '22': 5, '23': 5 },
+    '21': { '18': 5 , '51': 5},
+    '22': { '20': 5, '24': 5 },
+    '23': { '20': 5 , '29': 5},
+    '24': { '25': 5, '22': 5 },
+    '25': { '24': 5, '26': 5 },
+    '26': { '25': 5, '27': 5 },
+    '27': { '26': 5, '28': 5 },
+    '28': { '29': 5, '27': 5 },
+    '29': { '28': 5, '30': 5 ,  '23': 5},
+    '30': { '29': 5, '31': 5 },
+    '31': { '30': 5, '32': 5 },
+    '32': { '31': 5, '33': 5, '65':5  },
+    '33': { '32': 5, '34': 5, },  
+    '34': { '33': 5, '35': 5 },
+    '35': { '34': 5, '36': 5 },
+    '36': { '35': 5, '37': 5 },
+    '37': { '36': 5, '38': 5 },
+    '38': { '39': 5, '37': 5 },
+    '39': { '38': 5, '40': 5, '64':5},
+    '40': { '39': 5, '41': 5 }, 
+    '41': { '40': 5, '46': 5 }, 
+    '42': { '43': 5, '41': 5 },
+    '43': { '42': 5, '44': 5 },
+    '44': { '43': 5, '45': 5 },
+    '45': { '44': 5, '50': 5 },
+    '46': { '47': 5, '41': 5 },
+    '47': { '46': 5, '48': 5 },
+    '48': { '47': 5, '49': 5 , '57': 5},
+    '49': { '48': 5, '50': 5 },
+    '50': { '49': 5, '51': 5 , '45': 5},
+    '51': { '50': 5, '52': 5 },
+    '52': { '53': 5, '51': 5 },
+    '53': { '54': 5, '52': 5 },
+    '54': { '21': 5, '53': 5 ,'55':5},
+    '55': { '54': 5, '56': 5 , '58': 5},
+    '56': { '55': 5, '57': 5 },
+    '57': { '56': 5, '48': 5 },
+    '58': { '21': 5, '59': 5, '55': 5 },
+    '59': { '58': 5, '60': 5 },
+    '60': { '61': 5, '59': 5 },
+    '61': { '60': 5, '62': 5 },
+    '62': { '61': 5, '63': 5 },
+    '63': { '62': 5, '64': 5 },
+    '64': { '65': 5, '63': 5 , '39':5},
+    '65': { '64': 5, '32': 5 },
+};
+        
+        function dijkstra(graph, start, end) {
+            let distances = {}, prev = {}, queue = new Set(Object.keys(graph));
+            Object.keys(graph).forEach(node => distances[node] = Infinity);
+            distances[start] = 0;
+
+            while (queue.size) {
+                
+                let minNode = Array.from(queue).reduce((a, b) => distances[a] < distances[b] ? a : b);
+                queue.delete(minNode);
+
+                if (minNode === end) break;
+
+
+                for (let neighbor in graph[minNode]) {
+                    let alt = distances[minNode] + graph[minNode][neighbor];
+                    if (alt < distances[neighbor]) {
+                        distances[neighbor] = alt;
+                        prev[neighbor] = minNode;
+                    }
+                }
+            }
+
+            // Reconstruct the shortest path from the previous nodes
+            let path = [];
+            let u = end;
+            while (u !== undefined) {
+                path.unshift(u);
+                u = prev[u];
+            }
+
+            // Log path and distances for debugging
+            console.log('Distances:', distances);
+            console.log('Shortest Path:', path);
+
+            return path[0] === start ? path : [];
+        }
+
+        // Define polylines (example coordinates)
+        const nodes = {
+            'A': [Cesium.Cartesian3.fromDegrees(125.35402888467598, 6.753033096767723)],
+            'B': [Cesium.Cartesian3.fromDegrees(125.35378879618224, 6.753036340601085)],
+            'C': [Cesium.Cartesian3.fromDegrees(125.35378389639135, 6.752952000376538)],
+            'D': [Cesium.Cartesian3.fromDegrees(125.35343927886186, 6.752953622304602)],
+            'E': [Cesium.Cartesian3.fromDegrees(125.35332911549631, 6.753041930541087)],
+            'F': [Cesium.Cartesian3.fromDegrees(125.35343632630162, 6.7528288689236575)],
+            'G': [Cesium.Cartesian3.fromDegrees(125.35378520424132, 6.75282431028937)],
+            'H': [Cesium.Cartesian3.fromDegrees(125.35378655925177, 6.752434221048105)],
+            'I': [Cesium.Cartesian3.fromDegrees( 125.35367621284672, 6.752431787447179)],
+            'J': [Cesium.Cartesian3.fromDegrees( 125.35344732279674, 6.752431787493435)],
+            'K': [Cesium.Cartesian3.fromDegrees( 125.3536802445401,6.75232123930823)],
+            'L': [Cesium.Cartesian3.fromDegrees( 125.35345002758828, 6.752322771804913)],
+            'M': [Cesium.Cartesian3.fromDegrees( 125.35368951336972,6.7522340240190175)],
+            'N': [Cesium.Cartesian3.fromDegrees( 125.35379039202678, 6.752235580948934)],
+            'O': [Cesium.Cartesian3.fromDegrees( 125.35322334346421, 6.752834076764373)],
+            'P': [Cesium.Cartesian3.fromDegrees( 125.35322334472704, 6.752700978554614)],
+            'Q': [Cesium.Cartesian3.fromDegrees( 125.35279914628438, 6.7526996824700944)],
+            'R': [Cesium.Cartesian3.fromDegrees( 125.35280407371079,  6.75261605556787)],
+            'S': [Cesium.Cartesian3.fromDegrees( 125.35294037777453,6.752587847673084)],
+            'T': [Cesium.Cartesian3.fromDegrees( 125.35278936100633,6.752815224364156)],
+            'U': [Cesium.Cartesian3.fromDegrees( 125.3522911990388, 6.75266587890782)],
+            'V': [Cesium.Cartesian3.fromDegrees( 125.35229903191492,6.752815224408494)],
+            'W': [Cesium.Cartesian3.fromDegrees( 125.35391812497477,6.752954737061273)],
+            'X': [Cesium.Cartesian3.fromDegrees(  125.35390020806796,6.752239469510002)],
+            'Y': [Cesium.Cartesian3.fromDegrees(  125.35344937874964,6.752262208682211)],
+            'Z': [Cesium.Cartesian3.fromDegrees( 125.35338840245481, 6.752257123955502)],
+            '1': [Cesium.Cartesian3.fromDegrees( 125.353387924341,  6.752129265702706)],
+            '2': [Cesium.Cartesian3.fromDegrees( 125.3533889589375, 6.751713135742079)],
+            '3': [Cesium.Cartesian3.fromDegrees(  125.3539011142579, 6.752113853480253)],
+            '4': [Cesium.Cartesian3.fromDegrees(  125.35385558934058, 6.751999803080736)],
+            '5': [Cesium.Cartesian3.fromDegrees(  125.35385248536886, 6.751883697691753)],
+            '6': [Cesium.Cartesian3.fromDegrees(   125.35370349473015, 6.751897054950007)],
+            '7': [Cesium.Cartesian3.fromDegrees( 125.3538489809523,6.751697119631075)],
+            '8': [Cesium.Cartesian3.fromDegrees( 125.35368694367213,6.752121881567618)],
+            '9': [Cesium.Cartesian3.fromDegrees( 125.35355915563429,6.752123166618944)],
+            '10': [Cesium.Cartesian3.fromDegrees( 125.35355673158278, 6.752248531930576)],
+            '11': [Cesium.Cartesian3.fromDegrees(  125.353913894514,6.752745122245329)],
+            '12': [Cesium.Cartesian3.fromDegrees(125.35360646376114, 6.751707386597545)],
+            '13': [Cesium.Cartesian3.fromDegrees( 125.35384636522167, 6.7515753120980975)],
+            '14': [Cesium.Cartesian3.fromDegrees(  125.35362227798271,6.751577869951149)],
+            '15': [Cesium.Cartesian3.fromDegrees(125.35337374263219, 6.751588636827563)],
+            '16': [Cesium.Cartesian3.fromDegrees( 125.35338593504906, 6.7516476626657465)],
+            '17': [Cesium.Cartesian3.fromDegrees(  125.35326475893311,6.7516450244358595)],
+            '18': [Cesium.Cartesian3.fromDegrees(125.35326087958111,6.751470472845426)],
+            '19': [Cesium.Cartesian3.fromDegrees( 125.35314616038619,6.751473062019386)],
+            '20': [Cesium.Cartesian3.fromDegrees( 125.35301058315605,6.751476945780851)],
+            '21': [Cesium.Cartesian3.fromDegrees(125.35324262967589,6.751153298210639)],
+            '22': [Cesium.Cartesian3.fromDegrees( 125.35301475089716,6.7515897222294825)],
+            '23': [Cesium.Cartesian3.fromDegrees(  125.35271298571053,6.75147011044163)],
+            '24': [Cesium.Cartesian3.fromDegrees(  125.35301363423861,6.7516858964898745)],
+            '25': [Cesium.Cartesian3.fromDegrees( 125.35272277596397,6.751689021193897)],
+            '26': [Cesium.Cartesian3.fromDegrees(  125.35272277596397,6.751689021193897)],
+            '27': [Cesium.Cartesian3.fromDegrees(125.35237274213381,6.751686417401345)],
+            '28': [Cesium.Cartesian3.fromDegrees(125.35237161294629,6.751586559943149)],
+            '29': [Cesium.Cartesian3.fromDegrees( 125.35237411025525,6.751467353430115)],
+            '30': [Cesium.Cartesian3.fromDegrees(125.35237614494292,6.751346118663832)],
+            '31': [Cesium.Cartesian3.fromDegrees(125.35234155523398,6.751336015764636)],
+            '32': [Cesium.Cartesian3.fromDegrees(125.35232934710058,6.751228925027078)],
+            '33': [Cesium.Cartesian3.fromDegrees(  125.3521706413697,6.751226904446199)],
+            '34': [Cesium.Cartesian3.fromDegrees(125.35190234104488,6.751230194332578)],
+            '35': [Cesium.Cartesian3.fromDegrees( 125.35188811191665,6.7510696425145795)],
+            '36': [Cesium.Cartesian3.fromDegrees( 125.35187718526254,6.750895281586779)],
+            '37': [Cesium.Cartesian3.fromDegrees( 125.35208990455482,6.7508850394326885)],
+            '38': [Cesium.Cartesian3.fromDegrees(  125.35228586414343,6.7508811986247395)],
+            '39': [Cesium.Cartesian3.fromDegrees( 125.35228328572691,6.750945212085455)],
+            '40': [Cesium.Cartesian3.fromDegrees( 125.35244562715474,6.750937172600061)],
+            '41': [Cesium.Cartesian3.fromDegrees(125.35245198201898,6.750785158924202)],
+            '42': [Cesium.Cartesian3.fromDegrees( 125.35244161357372,6.750650913666462)],
+            '43': [Cesium.Cartesian3.fromDegrees( 125.35268157193138,6.750624823104403)],
+            '44': [Cesium.Cartesian3.fromDegrees(   125.35292413600973,6.750611440747306)],
+            '45': [Cesium.Cartesian3.fromDegrees(  125.35324177944386,6.750590411328474)],
+            '46': [Cesium.Cartesian3.fromDegrees( 125.35268157193138,6.750779676065605)],
+            '47': [Cesium.Cartesian3.fromDegrees( 125.35282595531095,6.750777764301176)],
+            '48': [Cesium.Cartesian3.fromDegrees(  125.35294723734933,6.750770117242567)],
+            '49': [Cesium.Cartesian3.fromDegrees(  125.35307283895077, 6.750660903521506)],
+            '50': [Cesium.Cartesian3.fromDegrees(   125.3532108056857,6.750663728474251)],
+            '51': [Cesium.Cartesian3.fromDegrees( 125.35333597138305,6.75075836439359)],
+            '52': [Cesium.Cartesian3.fromDegrees( 125.35333170437048,6.750915149233876)],
+            '53': [Cesium.Cartesian3.fromDegrees(125.3532337962269,6.751041351712601)],
+            '54': [Cesium.Cartesian3.fromDegrees(  125.35323664192168,6.751083563980444)],
+            '55': [Cesium.Cartesian3.fromDegrees( 125.35307935927176,6.751091585278161)],
+            '56': [Cesium.Cartesian3.fromDegrees(  125.35307301203107,6.75103989879311)],
+            '57': [Cesium.Cartesian3.fromDegrees( 125.35294860613135,6.750949132271018)],
+            '58': [Cesium.Cartesian3.fromDegrees( 125.35305867890906,6.7511622739275055)],
+            '59': [Cesium.Cartesian3.fromDegrees(125.35286835437097,6.75116471225968)],
+            '60': [Cesium.Cartesian3.fromDegrees(  125.3528460447252,6.750997441864385)],
+            '61': [Cesium.Cartesian3.fromDegrees(  125.35277071550797,6.750998532818187)],
+            '62': [Cesium.Cartesian3.fromDegrees( 125.35257904424913,6.751012032270651)],
+            '63': [Cesium.Cartesian3.fromDegrees( 125.35245011737794,6.751019956329344)],
+            '64': [Cesium.Cartesian3.fromDegrees(125.35233303782525,6.75102882421001)],
+            '65': [Cesium.Cartesian3.fromDegrees( 125.35233403002434,6.751130312163767)],
+        
+        };
+
+        function getNearestNode(userPos) {
+            let nearestNode = null;
+            let minDistance = Infinity;
+
+            Object.keys(nodes).forEach(node => {
+                let nodePos = nodes[node][0];
+                let distance = Cesium.Cartesian3.distance(userPos, nodePos);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestNode = node;
+                }
+            });
+            return nearestNode;
+        }
+
+        function drawRoute(path) {
+            let positions = path.map(node => nodes[node][0]);
+            viewer.entities.add({
+                polyline: {
+                    positions: positions,
+                    width: 5,
+                    material: Cesium.Color.YELLOW
+                }
+            });
+        }
+
+        function updateRoute() {
+            let end = document.getElementById('end').value;
+            if (!userLocation) {
+                alert("Waiting for live location...");
+                return;
+            }
+            let nearestNode = getNearestNode(userLocation);
+            if (!nearestNode) {
+                alert("No nearby nodes found.");
+                return;
+            }
+            viewer.entities.removeAll();
+
+            // Draw a polyline from the user's location to the nearest node
+            viewer.entities.add({
+                polyline: {
+                    positions: [userLocation, nodes[nearestNode][0]],
+                    width: 5,
+                    material: Cesium.Color.BLUE
+                }
+            });
+
+            // Find and draw the shortest path
+            const shortestPath = dijkstra(graph, nearestNode, end);
+            drawRoute(shortestPath);
+
+            // Redraw user location marker
+            if (userMarker) {
+                viewer.entities.remove(userMarker);
+            }
+            userMarker = viewer.entities.add({
+                position: userLocation,
+                point: {
+                    pixelSize: 10,
+                    color: Cesium.Color.RED
+                }
+            });
+        }
+
+        // Real-time location tracking
+        // Function to update user's position in real-time
+function updateUserPosition(position) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+
+    // Convert to Cesium Cartesian3
+    userLocation = Cesium.Cartesian3.fromDegrees(longitude, latitude);
+
+    // If marker already exists, remove it
+    if (userMarker) {
+        viewer.entities.remove(userMarker);
+    }
+
+    // Add new marker for the user's current location
+    userMarker = viewer.entities.add({
+        position: userLocation,
+        point: {
+            pixelSize: 10,
+            color: Cesium.Color.BLUE,
+        },
+    });
+
+    // Keep camera focused on the user's position
+   
+
+    console.log(`Updated location: ${latitude}, ${longitude}`);
+}
+
+// Handle location errors
+function handleLocationError(error) {
+    console.error("Error getting location:", error.message);
+}
+
+// Request real-time location updates
+if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(updateUserPosition, handleLocationError, {
+        enableHighAccuracy: true,
+        maximumAge: 0
+    });
+} else {
+    console.error("Geolocation is not supported by this browser.");
+}
+
+    </script>
+</body>
+</html>
