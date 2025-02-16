@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium Dijkstra Map</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #controls { position: absolute; top: 10px; left: 10px; background: white; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer" style="width: 100vw; height: 100vh;"></div>
+    <div id="controls">
+        <label for="end">End: </label>
+        <select id="end">
+            <option value="K">FACULTY SHS</option> //FACULTY SHS
+            <option value="O">RAYMOND CAMPUS</option> //RAYMOND START
+            <option value="S">CASHIER</option> // CASHIER
+            <option value="6">CHAPEL</option>
+            <option value="12">XAVIER</option>
+            <option value="19">LIBRARY</option>
+            <option value="26">ELEM CLASSROOMS</option>
+            <option value="28">ELEM OFFICES</option>
+            <option value="37">NORBERT</option>
+            <option value="50">GYM ENTRANCE</option>
+            <option value="53">GYM EXIT</option>
+            <option value="59">SACRE COUR HOTEL</option>
+        
+        </select>
+        <button onclick="updateRoute()">Find Route</button>
+    </div>
+    <script>
+        // Initialize Cesium Viewer with 2D and OSM imagery provider
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhOTVjOTZhYy1hZTg4LTQxMjctOGIwNS02NTJhNTY0OGM2NGIiLCJpZCI6Mjc0MTQ4LCJpYXQiOjE3Mzg5MzMzMjV9.jplqE-F0SAT9i29a2vzFr34liBCyUMR14Yg36hey_Wk';
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            terrainProvider: Cesium.createWorldTerrain(),
+           
+            scene3DOnly: false, // Ensures that it's in 2D mode
+            selectedImageryProviderViewModel: null // Disable default imagery provider view model
+        });
+
+        viewer.scene.morphTo2D(0); // Switch to 2D view
+
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(125.35287188231865, 6.751600681085947, 500),
+            orientation: {
+                heading: Cesium.Math.toRadians(0),
+                pitch: Cesium.Math.toRadians(-90),
+                roll: 0.0
+            }
+        });
+
+        // Initialize userLocation with the specified coordinates
+        let userLocation = null;
+        let userMarker = null;
+
+    
+        const graph = {
+    'A': { 'B': 2 }, 
+    'B': { 'A': 2, 'C': 3, 'E': 5 }, 
+    'C': { 'B': 3, 'D': 3, 'G': 2, 'W': 10 }, 
+    'D': { 'C': 5, 'F': 3 }, 
+    'E': { 'B': 5, 'C': 10, 'F': 50 },
+    'F': { 'C': 10, 'D': 2, 'G': 7, 'J': 5, 'O': 5 }, 
+    'G': { 'F': 7, 'C': 2, 'H': 5 }, 
+    'H': { 'G': 5, 'C': 10, 'I': 3, 'N': 2 },
+    'I': { 'H': 3, 'C': 10, 'J': 7, 'K': 5, 'N': 15 },
+    'J': { 'F': 5, 'I': 7, 'K': 15, 'Y': 5 }, 
+    'K': { 'J': 15, 'I': 5, 'L': 7, 'M': 7 },
+
+};
+        
+        function dijkstra(graph, start, end) {
+            let distances = {}, prev = {}, queue = new Set(Object.keys(graph));
+            Object.keys(graph).forEach(node => distances[node] = Infinity);
+            distances[start] = 0;
+
+            while (queue.size) {
+                
+                let minNode = Array.from(queue).reduce((a, b) => distances[a] < distances[b] ? a : b);
+                queue.delete(minNode);
+
+                if (minNode === end) break;
+
+
+                for (let neighbor in graph[minNode]) {
+                    let alt = distances[minNode] + graph[minNode][neighbor];
+                    if (alt < distances[neighbor]) {
+                        distances[neighbor] = alt;
+                        prev[neighbor] = minNode;
+                    }
+                }
+            }
+
+            // Reconstruct the shortest path from the previous nodes
+            let path = [];
+            let u = end;
+            while (u !== undefined) {
+                path.unshift(u);
+                u = prev[u];
+            }
+
+            // Log path and distances for debugging
+            console.log('Distances:', distances);
+            console.log('Shortest Path:', path);
+
+            return path[0] === start ? path : [];
+        }
+
+        // Define polylines (example coordinates)
+        const nodes = {
+            'A': [Cesium.Cartesian3.fromDegrees(125.35402888467598, 6.753033096767723)],
+            'B': [Cesium.Cartesian3.fromDegrees(125.35378879618224, 6.753036340601085)],
+            'C': [Cesium.Cartesian3.fromDegrees(125.35378389639135, 6.752952000376538)],
+            'D': [Cesium.Cartesian3.fromDegrees(125.35343927886186, 6.752953622304602)],
+            'E': [Cesium.Cartesian3.fromDegrees(125.35332911549631, 6.753041930541087)],
+            'F': [Cesium.Cartesian3.fromDegrees(125.35343632630162, 6.7528288689236575)],
+  
+        };
+
+        function getNearestNode(userPos) {
+            let nearestNode = null;
+            let minDistance = Infinity;
+
+            Object.keys(nodes).forEach(node => {
+                let nodePos = nodes[node][0];
+                let distance = Cesium.Cartesian3.distance(userPos, nodePos);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestNode = node;
+                }
+            });
+            return nearestNode;
+        }
+
+        function drawRoute(path) {
+            let positions = path.map(node => nodes[node][0]);
+            viewer.entities.add({
+                polyline: {
+                    positions: positions,
+                    width: 5,
+                    material: Cesium.Color.YELLOW
+                }
+            });
+        }
+
+        function updateRoute() {
+            let end = document.getElementById('end').value.trim(); // Ensure no extra spaces
+console.log("Selected Destination:", end); // Debug log
+
+if (!nodes.hasOwnProperty(end)) {  
+    console.error("Selected destination does not exist in nodes:", end);  
+    alert("Selected destination is not valid. Please select a correct node.");
+    return;
+}
+
+    if (!userLocation) {
+        alert("Waiting for live location...");
+        return;
+    }
+
+    let nearestNode = getNearestNode(userLocation);
+    if (!nearestNode) {
+        alert("No nearby nodes found.");
+        return;
+    }
+
+    console.log("Selected End:", end);
+    console.log("Nearest Node:", nearestNode);
+
+    // Ensure the destination node exists
+    if (!nodes[end] || !nodes[end][0]) {
+        alert("Selected destination is not defined in the node list.");
+        console.error("Invalid destination node:", end);
+        return;
+    }
+
+    // Clear only relevant markers (not all entities)
+    if (destinationMarker) viewer.entities.remove(destinationMarker);
+    if (userMarker) viewer.entities.remove(userMarker);
+
+    // Draw a polyline from user location to nearest node
+    viewer.entities.add({
+        polyline: {
+            positions: [userLocation, nodes[nearestNode][0]],
+            width: 5,
+            material: Cesium.Color.RED
+        }
+    });
+
+    // Find and draw the shortest path
+    const shortestPath = dijkstra(graph, nearestNode, end);
+    drawRoute(shortestPath);
+
+    // Place the destination marker
+    console.log("Placing Destination Marker at:", nodes[end][0]);
+
+    destinationMarker = viewer.entities.add({
+        position: nodes[end][0],
+        billboard: {
+            image: Cesium.buildModuleUrl('Widgets/Images/Icons/Place_pin.png'), // Default Cesium marker
+            width: 32,
+            height: 32,
+            scale: 1.0,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+        }
+    });
+
+    // Fly to destination to ensure it's visible
+    viewer.camera.flyTo({
+        destination: nodes[end][0],
+        duration: 2
+    });
+
+    console.log("Destination Marker Placed at:", nodes[end][0]);
+
+    // Redraw user location marker
+    userMarker = viewer.entities.add({
+        position: userLocation,
+        billboard: {
+            image: Cesium.buildModuleUrl('Widgets/Images/Icons/NavigationArrow.png'), // Default Cesium marker
+            width: 32,
+            height: 32,
+            scale: 1.0,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER
+        }
+    });
+}
+
+    // Keep camera focused on the user's position
+   
+
+    console.log(`Updated location: ${latitude}, ${longitude}`);
+}
+
+// Handle location errors
+function handleLocationError(error) {
+    console.error("Error getting location:", error.message);
+}
+
+// Request real-time location updates
+if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(updateUserPosition, handleLocationError, {
+        enableHighAccuracy: true,
+        maximumAge: 0
+    });
+} else {
+    console.error("Geolocation is not supported by this browser.");
+}
+
+    </script>
+</body>
+</html>

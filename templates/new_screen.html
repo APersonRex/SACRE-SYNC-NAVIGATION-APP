@@ -6,40 +6,128 @@
     <title>Cesium Dijkstra Map</title>
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Cesium.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.93/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-    <style>
-        body { margin: 0; overflow: hidden; }
-        #controls { position: absolute; top: 10px; left: 10px; background: white; padding: 10px; border-radius: 5px; }
-    </style>
-</head>
-<body>
-    <div id="cesiumContainer" style="width: 100vw; height: 100vh;"></div>
-    <div id="controls">
-        <label for="end">End: </label>
-        <select id="end">
-            <option value="K">FACULTY SHS</option> //FACULTY SHS
-            <option value="O">RAYMOND CAMPUS</option> //RAYMOND START
-            <option value="S">CASHIER</option> // CASHIER
-            <option value="6">CHAPEL</option>
-            <option value="12">XAVIER</option>
-            <option value="19">LIBRARY</option>
-            <option value="26">ELEM CLASSROOMS</option>
-            <option value="28">ELEM OFFICES</option>
-            <option value="37">NORBERT</option>
-            <option value="50">GYM ENTRANCE</option>
-            <option value="53">GYM EXIT</option>
-            <option value="59">SACRE COUR HOTEL</option>
-        
-        </select>
-        <button onclick="updateRoute()">Find Route</button>
+    <head>
+        <style>
+            /* General Reset */
+            body { 
+                margin: 0; 
+                overflow: hidden; 
+                font-family: Arial, sans-serif;
+            }
+    
+            /* Container for Cesium */
+            #cesiumContainer { 
+                width: 100vw; 
+                height: 100vh; 
+            }
+    
+            /* Control Panel */
+            #controls { 
+                position: absolute;
+                top: 5px;
+                left: 20px;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 15px;  
+                border-radius: 10px;
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+                backdrop-filter: blur(5px);
+                z-index: 1000;
+            }
+    
+            label {
+                font-weight: bold;
+                font-size: 14px;
+                color: #333;
+                margin-right: 10px;
+            }
+    
+            select {
+                padding: 8px;
+                border: 2px solid #ccc;
+                border-radius: 5px;
+                font-size: 14px;
+                outline: none;
+                
+                transition: border-color 0.3s ease;
+                
+            }
+    
+            select:focus {
+                border-color: #f31d0e;
+            }
+    
+            /* Route Button */
+            #route {
+                position: fixed;
+                bottom: 0px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #f31d0e;
+                color: white;
+                padding: 15px 25px;
+                width: 250px;
+                border: none;
+                border-radius: 50px;
+                cursor: pointer;
+                font-size: 16px;
+                font-weight: bold;
+                transition: background-color 0.3s ease, transform 0.2s ease;
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+                z-index: 1000;
+            }
+    
+            #route:hover {
+                background: #c3140b;
+                transform: translateX(-50%) scale(1.05);
+            }
+    
+            /* Responsive Design */
+            @media (max-width: 600px) {
+                #controls {
+                    width: 90%;
+                    left: 50%;
+                    transform: translateX(-50%);
+                }
+    
+                #route {
+                    width: 90%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="cesiumContainer"></div>
+    
+        <!-- Control Panel -->
+        <div id="controls">
+            <label for="end">Select Destination:</label>
+            <select id="end">
+                <option value="K">FACULTY SHS</option>
+                <option value="O">RAYMOND CAMPUS</option>
+                <option value="S">CASHIER</option>
+                <option value="6">CHAPEL</option>
+                <option value="12">XAVIER</option>
+                <option value="19">LIBRARY</option>
+                <option value="26">ELEM CLASSROOMS</option>
+                <option value="28">ELEM OFFICES</option>
+                <option value="37">NORBERT</option>
+                <option value="50">GYM ENTRANCE</option>
+                <option value="53">GYM EXIT</option>
+                <option value="59">SACRE COUR HOTEL</option>
+            </select>
+        </div>
+    
+        <!-- Route Button -->
+        <button id="route" onclick="updateRoute()">Find Route</button>
+    </body>
+    
     </div>
     <script>
         // Initialize Cesium Viewer with 2D and OSM imagery provider
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhOTVjOTZhYy1hZTg4LTQxMjctOGIwNS02NTJhNTY0OGM2NGIiLCJpZCI6Mjc0MTQ4LCJpYXQiOjE3Mzg5MzMzMjV9.jplqE-F0SAT9i29a2vzFr34liBCyUMR14Yg36hey_Wk';
         const viewer = new Cesium.Viewer('cesiumContainer', {
             terrainProvider: Cesium.createWorldTerrain(),
-            imageryProvider: new Cesium.UrlTemplateImageryProvider({
-                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-            }),
+           
             scene3DOnly: false, // Ensures that it's in 2D mode
             selectedImageryProviderViewModel: null // Disable default imagery provider view model
         });
@@ -58,6 +146,7 @@
         // Initialize userLocation with the specified coordinates
         let userLocation = null;
         let userMarker = null;
+        let destinationMarker = null; // Declare it globally
 
     
         const graph = {
@@ -308,49 +397,77 @@
                 polyline: {
                     positions: positions,
                     width: 5,
-                    material: Cesium.Color.YELLOW
+                    material: Cesium.Color.RED
                 }
             });
         }
 
         function updateRoute() {
-            let end = document.getElementById('end').value;
-            if (!userLocation) {
-                alert("Waiting for live location...");
-                return;
-            }
-            let nearestNode = getNearestNode(userLocation);
-            if (!nearestNode) {
-                alert("No nearby nodes found.");
-                return;
-            }
-            viewer.entities.removeAll();
+    let end = document.getElementById('end').value;
 
-            // Draw a polyline from the user's location to the nearest node
-            viewer.entities.add({
-                polyline: {
-                    positions: [userLocation, nodes[nearestNode][0]],
-                    width: 5,
-                    material: Cesium.Color.BLUE
-                }
-            });
+    if (!userLocation) {
+        alert("Waiting for live location...");
+        return;
+    }
 
-            // Find and draw the shortest path
-            const shortestPath = dijkstra(graph, nearestNode, end);
-            drawRoute(shortestPath);
+    let nearestNode = getNearestNode(userLocation);
+    if (!nearestNode) {
+        alert("No nearby nodes found.");
+        return;
+    }
+    viewer.entities.removeAll();
+    console.log("Selected End:", end);
+    console.log("Nearest Node:", nearestNode);
 
-            // Redraw user location marker
-            if (userMarker) {
-                viewer.entities.remove(userMarker);
-            }
-            userMarker = viewer.entities.add({
-                position: userLocation,
-                point: {
-                    pixelSize: 10,
-                    color: Cesium.Color.RED
-                }
-            });
+    // Ensure the destination node exists
+    if (!nodes[end]) {
+        alert("Selected destination is not defined in the node list.");
+        return;
+    }
+
+    // Clear only relevant markers (not all entities)
+    if (destinationMarker) viewer.entities.remove(destinationMarker);
+    if (userMarker) viewer.entities.remove(userMarker);
+
+    // Draw a polyline from user location to nearest node
+    viewer.entities.add({
+        polyline: {
+            positions: [userLocation, nodes[nearestNode][0]],
+            width: 5,
+            material: Cesium.Color.RED
         }
+    });
+
+    // Find and draw the shortest path
+    const shortestPath = dijkstra(graph, nearestNode, end);
+    drawRoute(shortestPath);
+
+    // Place the destination marker
+    destinationMarker = viewer.entities.add({
+        position: nodes[end][0],
+        billboard: {
+            image: "{{ url_for('static', filename='marker-icon.png') }}", // Default Cesium marker
+            width: 32,
+            height: 32,
+            scale: 1.0,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+        }
+    });
+
+    console.log("Destination Marker Placed at:", nodes[end][0]);
+
+    // Redraw user location marker
+    userMarker = viewer.entities.add({
+        position: userLocation,
+        billboard: {
+            image: "{{ url_for('static', filename='marker-icon.png') }}", // Test with Cesium marker
+            width: 32,
+            height: 32,
+            scale: 1.0,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER
+        }
+    });
+}
 
         // Real-time location tracking
         // Function to update user's position in real-time
@@ -369,10 +486,14 @@ function updateUserPosition(position) {
     // Add new marker for the user's current location
     userMarker = viewer.entities.add({
         position: userLocation,
-        point: {
-            pixelSize: 10,
-            color: Cesium.Color.BLUE,
-        },
+        billboard: {
+            image: "{{ url_for('static', filename='marker-icon.png') }}", 
+            width: 32,
+            height: 32,
+            scale: 1.0,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER
+        }
     });
 
     // Keep camera focused on the user's position
